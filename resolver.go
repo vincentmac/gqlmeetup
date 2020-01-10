@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/vincentmac/gqlmeetup/models"
+	"github.com/vincentmac/gqlmeetup/postgres"
 ) // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 var meetups = []*models.Meetup{
@@ -37,7 +38,10 @@ var users = []*models.User{
 	},
 }
 
-type Resolver struct{}
+type Resolver struct {
+	MeetupsRepo postgres.MeetupsRepo
+	UsersRepo   postgres.UsersRepo
+}
 
 func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
@@ -61,31 +65,33 @@ func (r *Resolver) User() UserResolver {
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Meetups(ctx context.Context) ([]*models.Meetup, error) {
-	return meetups, nil
+	return r.MeetupsRepo.GetMeetups()
 }
 
 type mutationResolver struct{ *Resolver }
 
-func (r *mutationResolver) CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error) {
-	panic("not implemented")
+func (m *mutationResolver) CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error) {
+	if len(input.Name) < 3 {
+		return nil, errors.New("name not long enough")
+	}
+
+	if len(input.Description) < 3 {
+		return nil, errors.New("description not long enough")
+	}
+
+	meetup := &models.Meetup{
+		Name:        input.Name,
+		Description: input.Description,
+		UserId:      "1", // hardcode to bob for now
+	}
+
+	return m.MeetupsRepo.CreateMeetup(meetup)
 }
 
 type meetupResolver struct{ *Resolver }
 
-func (r *meetupResolver) User(ctx context.Context, obj *models.Meetup) (*models.User, error) {
-	user := new(models.User)
-
-	for _, u := range users {
-		if u.ID == obj.UserId {
-			user = u
-			break
-		}
-	}
-
-	if user == nil {
-		return nil, errors.New("user with id not found")
-	}
-	return user, nil
+func (m *meetupResolver) User(ctx context.Context, obj *models.Meetup) (*models.User, error) {
+	return m.UsersRepo.GetUserByID(obj.UserId)
 }
 
 type userResolver struct{ *Resolver }
