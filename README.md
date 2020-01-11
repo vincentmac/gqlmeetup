@@ -5,7 +5,7 @@ https://www.youtube.com/watch?v=A6lDNao00WQ&list=PLzQWIQOqeUSNwXcneWYJHUREAIucJ5
 ## DB Migrations:
 ```bash
 # Create new migration (example)
-λ: migrate create -ext sql -dir postgres/migrations create_users
+λ|penguin gqlmeetup: migrate create -ext sql -dir postgres/migrations create_users
 
 # Apply migrations (up/down)
 λ|penguin gqlmeetup: source .env # to get $POSTGRESQL_URL

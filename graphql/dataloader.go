@@ -21,12 +21,32 @@ func DataloaderMiddleware(db *pg.DB, next http.Handler) http.Handler {
 
 				err := db.Model(&users).Where("id in (?)", pg.In(ids)).Select()
 
-				// if err != nil {
-				// 	return nil, []error{err}
-				// }
+				if err != nil {
+					return nil, []error{err}
+				}
 
-				// return users, nil
-				return users, []error{err}
+				// Fix dataloader issue: db call doesn't return the correct users in the order requested
+				// see: https://www.youtube.com/watch?v=GcIVFwQv0Io&list=PLzQWIQOqeUSNwXcneWYJHUREAIucJ5UZn&index=5
+				// We need to reorder the results of `user` to the order requested by `ids`
+				// To do this, we'll create a map to index the users by user.ID
+				u := make(map[string]*models.User, len(users))
+
+				for _, user := range users {
+					u[user.ID] = user
+				}
+
+				// Next, we'll construct a new slice containing the users
+				result := make([]*models.User, len(ids))
+
+				// and add the users in the order requested by `ids`
+				for i, id := range ids {
+					result[i] = u[id]
+				}
+
+				// fmt.Printf("[ids] -> %v\n[users] -> %v, %v\n", ids, users[0], users[1])
+				// fmt.Printf("[result] -> %v, %v\n", result[0], result[1])
+
+				return result, nil
 			},
 		}
 
