@@ -8,7 +8,8 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/go-pg/pg/v9"
 	"github.com/joho/godotenv"
-	"github.com/vincentmac/gqlmeetup"
+
+	"github.com/vincentmac/gqlmeetup/graphql"
 	"github.com/vincentmac/gqlmeetup/postgres"
 )
 
@@ -35,13 +36,15 @@ func main() {
 		port = defaultPort
 	}
 
-	c := gqlmeetup.Config{Resolvers: &gqlmeetup.Resolver{
+	c := graphql.Config{Resolvers: &graphql.Resolver{
 		MeetupsRepo: postgres.MeetupsRepo{DB: DB},
 		UsersRepo:   postgres.UsersRepo{DB: DB},
 	}}
 
+	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
+
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", handler.GraphQL(gqlmeetup.NewExecutableSchema(c)))
+	http.Handle("/query", graphql.DataloaderMiddleware(DB, queryHandler)) // add Dataloader Middleware
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
