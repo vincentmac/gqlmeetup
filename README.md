@@ -22,3 +22,5 @@ Using dataloaden: https://github.com/vektah/dataloaden
 λ|penguin gqlmeetup: cd graphql
 λ|penguin gqlmeetup/graphql: go run github.com/vektah/dataloaden UserLoader string '*github.com/vincentmac/gqlmeetup/models.User'
 ```
+
+
